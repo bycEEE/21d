@@ -3,11 +3,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
+	"github.com/spf13/viper"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 // PrivateClient is a client that connects to the private API.
@@ -119,16 +122,53 @@ func (c *PrivateClient) get(ctx context.Context, query url.Values, headers map[s
 }
 
 func main() {
+	// create config file if it does not exist
+	os.OpenFile("config.yaml", os.O_RDONLY|os.O_CREATE, 0666)
+
+	// read config for login credentials
+	viper.SetConfigFile("config.yaml")
+	viper.SetConfigType("yaml")
+	viper.AddConfigPath(".")
+	viper.WatchConfig()
+	err := viper.ReadInConfig()
+
+	// prompt user to configure or reconfigure if credentials are not found
+	if err != nil {
+		log.Fatalf("Config error, type `21d configure` to continue: %s\n", err)
+	} else {
+		// prompt for credentials and save if non-existent
+		if !viper.IsSet("deezer.username") || !viper.IsSet("deezer.password") {
+			log.Fatalf("Deezer login credentials were not found, type `21d` configure to continue")
+		}
+	}
+
+	// retrieve credentials
+	username := viper.GetString("deezer.username")
+	// on top of aes-256 encryption, the password was base64 encoded
+	encodedPassword, err := base64.StdEncoding.DecodeString(viper.GetString("deezer.password"))
+	if err != nil {
+		log.Fatalf("Error decoding password: %+v", err)
+	}
+	password, err := decryptCredentials(encodedPassword, localKey)
+
+	// create private client
 	privateClient, err := NewPrivateClient()
 	if err != nil {
 		log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
 	}
-	checkFormLogin, err := privateClient.GetCheckFormLogin()
-	if err != nil {
-		log.Fatalf("Error getting checkFormLogin value: %+v\n", err)
-	}
-	if checkFormLogin == "" {
-		log.Fatal("checkFormLogin value is empty\n")
-	}
-	fmt.Print(checkFormLogin)
+
+	// login
+	resp, err := privateClient.Login(username, string(password))
+	fmt.Println(resp)
+
+	// initiate cli commands
+	Execute()
+
+	//checkFormLogin, err := privateClient.GetCheckFormLogin()
+	//if err != nil {
+	//	log.Fatalf("Error getting checkFormLogin value: %+v\n", err)
+	//}
+	//if checkFormLogin == "" {
+	//	log.Fatal("checkFormLogin value is empty\n")
+	//}
 }

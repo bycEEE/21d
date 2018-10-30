@@ -14,17 +14,25 @@ const (
 	publicAPIURL  = "https://api.deezer.com"
 )
 
-// SetDefaultHeaders sets the default headers on a request to the private API.
-// This should be set on all requests or reworked into the client.
-func SetDefaultHeaders(r *http.Request) *http.Request {
-	h := r.Header
-	h.Set("User-Agent", "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:62.0) Gecko/20100101 Firefox/62.0")
-	h.Set("Content-Language", "en-US")
-	h.Set("Cache-Control", "max-age=0")
-	h.Set("Accept", "*/*")
-	h.Set("Accept-Charset", "utf-8,ISO-8859-1;q=0.7,*;q=0.3")
-	h.Set("Accept-Language", "en-US,en;q=0.9,en-US;q=0.8,en;q=0.7")
-	return r
+// Login handles logging in.
+func (c *PrivateClient) Login(username, password string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", privateAPIURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	checkFormLogin, err := c.GetCheckFormLogin()
+	if err != nil {
+		return nil, err
+	}
+	form := url.Values{}
+	form.Add("type", "login")
+	form.Add("mail", username)
+	form.Add("password", password)
+	form.Add("checkFormLogin", checkFormLogin)
+	req.PostForm = form
+	req = c.addHeaders(req, headers{"Content-Type": {"application/x-www-form-url-encoded"}})
+	resp, err := c.client.Do(req)
+	return resp, nil
 }
 
 // GetCheckFormLogin retrieves the checkFormLogin parameter that gets sent to
@@ -60,42 +68,3 @@ func (c *PrivateClient) GetCheckFormLogin() (string, error) {
 	return pb.Results.CheckFormLogin, nil
 }
 
-//func (c *PrivateClient) GetCheckFormLogin() (l string, err error) {
-//	// Create URL string
-//	u, err := NewDefaultPrivateAPIURL()
-//	if err != nil {
-//		return "", err
-//	}
-//	q := u.Query()
-//	q.Set("method", "deezer.getUserData")
-//	u.RawQuery = q.Encode()
-//
-//	// Create request and add headers
-//	req, err := http.NewRequest("GET", u.String(), nil)
-//	if err != nil {
-//		return "", err
-//	}
-//	req = SetDefaultHeaders(req)
-//
-//	// Send request and read body
-//	resp, err := c.httpClient.Do(req)
-//	if err != nil {
-//		return "", err
-//	}
-//	defer resp.Body.Close()
-//	body, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	// Unmarshal
-//	var pb PrivateBody
-//	err = json.Unmarshal(body, &pb)
-//	if err != nil {
-//		return "", err
-//	}
-//	if pb.Results.CheckFormLogin == "" {
-//		return "", fmt.Errorf("checkFormLogin value is empty")
-//	}
-//	return pb.Results.CheckFormLogin, nil
-//}
