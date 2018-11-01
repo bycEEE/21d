@@ -4,7 +4,6 @@ import (
 	jar "21d/cookiejar"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -130,6 +129,10 @@ func (c *PrivateClient) get(ctx context.Context, query url.Values, headers map[s
 	return c.sendRequest(ctx, "GET", query, nil, headers)
 }
 
+func (c *PrivateClient) post(ctx context.Context, query url.Values, body io.Reader, headers map[string][]string) (*http.Response, error) {
+	return c.sendRequest(ctx, "POST", query, body, headers)
+}
+
 func main() {
 	//// create config file if it does not exist
 	//os.OpenFile("config.yaml", os.O_RDONLY|os.O_CREATE, 0666)
@@ -171,11 +174,11 @@ func main() {
 	//fmt.Println(resp)
 
 	// test getting userdata
-	c, _ := NewPrivateClient()
-	v := url.Values{}
-	v.Set("method", "deezer.getUserData")
-	resp, _ := c.GetPrivateResponse(v)
-	fmt.Println(resp)
+	//c, _ := NewPrivateClient()
+	//v := url.Values{}
+	//v.Set("method", "deezer.getUserData")
+	//resp, _ := c.GetPrivateResponse(v)
+	//fmt.Println(resp)
 	// initiate cli commands
 	Execute()
 

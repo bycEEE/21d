@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -80,7 +81,7 @@ func (c *PrivateClient) Login(username, password, checkFormLogin string) (*http.
 	return resp, nil
 }
 
-// GetPrivateResponse parses an http response retrieved from the private API into a PrivateResponse struct.
+// GetPrivateResponse parses an http response from a GET request to the private API.
 func (c *PrivateClient) GetPrivateResponse(v url.Values) (*PrivateResponse, error) {
 	ctx := context.Background()
 	resp, err := c.get(ctx, v, nil)
@@ -106,4 +107,43 @@ func (c *PrivateClient) GetPrivateResponse(v url.Values) (*PrivateResponse, erro
 	return &pr, err
 }
 
+// PostPrivateResponse parses an http response from a POST request to the private API.
+func (c *PrivateClient) PostPrivateResponse(v url.Values, body io.Reader) (*PrivateResponse, error) {
+	ctx := context.Background()
+	// read token if not set
+	if v.Get("api_token") == "" {
+		b, err := ioutil.ReadFile(".token")
+		if err != nil {
+			return nil, fmt.Errorf("error reading token, try logging in again: %+v", err)
+		}
+		v.Set("api_token", string(b))
+	}
+	resp, err := c.post(ctx, v, body, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	respBody, err := ioutil.ReadAll(resp.Body)
+	// do error handling here when token expires
+	// {"error":{"VALID_TOKEN_REQUIRED":"Invalid CSRF token"},"results":{},"payload":null}
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("request failed with error code %d, %s", resp.StatusCode, string(respBody))
+	}
+
+	//
+	// implement error handling with PrivateError
+	//
+
+	// unmarshal
+	var pr PrivateResponse
+	err = json.Unmarshal(respBody, &pr)
+	if err != nil {
+		return nil, err
+	}
+	return &pr, err
+}
+// PostPrivateResponse parses an http response from a POST request retrieved from the private API.
 

@@ -17,7 +17,7 @@ func login(cmd *cobra.Command, args []string) error {
 	os.Remove(".token")
 	os.Remove(".cookie")
 
-	// create private client and remove cookies from cookie jar, though they shouldn't be loaded
+	// create private client and remove cookies from cookie jar, though none should be loaded
 	privateClient, err := NewPrivateClient()
 	if err != nil {
 		log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
@@ -55,17 +55,6 @@ func login(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// get token
-	//token, err := privateClient.GetToken()
-
-	// save token
-	f, err := os.OpenFile(".token", os.O_RDWR|os.O_CREATE, 0600)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	//f.WriteString(token)
-
 	return nil
 }
 
@@ -90,4 +79,6 @@ func Execute() {
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(getCmd)
+	getCmd.AddCommand(getTrackCmd)
 }
