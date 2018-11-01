@@ -2,47 +2,77 @@ package main
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
+	"log"
+	"net/url"
 	"os"
 	"strings"
 	"syscall"
 )
 
-func configure(cmd *cobra.Command, args []string) error {
-	// prompt for credentials and save if non-existent
-	// configure username
+func login(cmd *cobra.Command, args []string) error {
+	// remove existing token and cookies
+	os.Remove(".token")
+	os.Remove(".cookie")
+
+	// create private client and remove cookies from cookie jar, though they shouldn't be loaded
+	privateClient, err := NewPrivateClient()
+	if err != nil {
+		log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
+	}
+	privateClient.jar.RemoveAll()
+	// get required checkFormLogin value to send along with username/password
+	v := url.Values{}
+	v.Set("method", "deezer.getUserData")
+	resp, err := privateClient.GetPrivateResponse(v)
+	if err != nil {
+		log.Fatalf("Error retrieving user data: %+v", err)
+	}
+	if resp.Results.CheckFormLogin == "" {
+		log.Fatal("checkFormLogin value is empty")
+	}
+
+	// prompt for credentials and save cookie if non-existent
+	// username
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Deezer username: ")
 	scanner.Scan()
 	username := strings.TrimSpace(scanner.Text())
-	viper.Set("deezer.username", username)
-
-	// configure password
+	// password
 	fmt.Print("Deezer password: ")
-	password, err := terminal.ReadPassword(int(syscall.Stdin))
+	passwordBytes, err := terminal.ReadPassword(int(syscall.Stdin))
+	password := string(passwordBytes[:])
+	fmt.Println("")
 	if err != nil {
 		return err
 	}
-	encryptedPassword, err := encryptCredentials(password, localKey)
-	if err != nil {
-		return err
-	}
-	// encode as base64 to easily store into config
-	viper.Set("deezer.password", base64.StdEncoding.EncodeToString(encryptedPassword))
 
-	// save credentials
-	viper.WriteConfig()
+	// verify login succeeded
+	_, err = privateClient.Login(username, password, resp.Results.CheckFormLogin)
+	if err != nil {
+		return err
+	}
+
+	// get token
+	//token, err := privateClient.GetToken()
+
+	// save token
+	f, err := os.OpenFile(".token", os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	//f.WriteString(token)
+
 	return nil
 }
 
-var configureCmd = &cobra.Command{
-	Use:   "configure",
-	Short: "Configure 21d",
-	RunE:  configure,
+var loginCmd = &cobra.Command{
+	Use:   "login",
+	Short: "Log into Deezer",
+	RunE:  login,
 }
 
 var rootCmd = &cobra.Command{
@@ -59,5 +89,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(configureCmd)
+	rootCmd.AddCommand(loginCmd)
 }

@@ -1,7 +1,7 @@
 package main
 
-// PrivateBody contains the response body to a private API call.
-type PrivateBody struct {
+// PrivateResponse contains the response body to a private API call.
+type PrivateResponse struct {
 	//Error   PrivateError     `json:"error"`
 	Results PrivateResults `json:"results"`
 }
@@ -11,15 +11,16 @@ type PrivateResults struct {
 	User           PrivateUser `json:"USER"`
 	CheckFormLogin string      `json:"checkFormLogin"`
 	CheckForm      string      `json:"checkForm"`
+	SessionID   string `json:"SESSION_ID"`
+	UserToken   string `json:"USER_TOKEN"`
+	Country     string `json:"COUNTRY"`
+	PlayerToken string `json:"PLAYER_TOKEN"`
 }
 
 // PrivateUser contains information about the Deezer user retrieved from the private API.
 type PrivateUser struct {
 	ID          int    `json:"USER_ID"`
-	SessionID   string `json:"SESSION_ID"`
-	UserToken   string `json:"USER_TOKEN"`
-	Country     string `json:"COUNTRY"`
-	PlayerToken string `json:"PLAYER_TOKEN"`
+	UserPicture string `json:"USER_PICTURE"`
 }
 
 // PrivateError is a mapping of error messages.

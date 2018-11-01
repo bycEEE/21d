@@ -1,16 +1,13 @@
 package main
 
 import (
+	jar "21d/cookiejar"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"fmt"
-	"github.com/spf13/viper"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 // PrivateClient is a client that connects to the private API.
@@ -23,6 +20,8 @@ type PrivateClient struct {
 	client *http.Client
 	// headers are custom set headers.
 	headers map[string]string
+	// jar is the cookie jar
+	jar *jar.Jar
 }
 
 type headers map[string][]string
@@ -31,6 +30,16 @@ type headers map[string][]string
 func NewPrivateClient() (*PrivateClient, error) {
 	// create private client
 	c := &PrivateClient{}
+
+	// create new cookie jar with persistent storage
+	// loads cookies if found
+	jarOpts := jar.Options{Filename: ".cookies"}
+	var err error
+	c.jar, err = jar.New(&jarOpts)
+	// return error if cookies are not loaded properly
+	if err != nil {
+		return nil, err
+	}
 
 	// set url related info
 	u, err := url.Parse(privateAPIURL)
@@ -50,7 +59,7 @@ func NewPrivateClient() (*PrivateClient, error) {
 		"Accept-Language": "en-US,en;q=0.9,en-US;q=0.8,en;q=0.7",
 	}
 
-	c.client = &http.Client{}
+	c.client = &http.Client{Jar: c.jar}
 	return c, nil
 }
 
@@ -122,53 +131,56 @@ func (c *PrivateClient) get(ctx context.Context, query url.Values, headers map[s
 }
 
 func main() {
-	// create config file if it does not exist
-	os.OpenFile("config.yaml", os.O_RDONLY|os.O_CREATE, 0666)
+	//// create config file if it does not exist
+	//os.OpenFile("config.yaml", os.O_RDONLY|os.O_CREATE, 0666)
+	//
+	//// read config for login credentials
+	//viper.SetConfigFile("config.yaml")
+	//viper.SetConfigType("yaml")
+	//viper.AddConfigPath(".")
+	//viper.WatchConfig()
+	//err := viper.ReadInConfig()
 
-	// read config for login credentials
-	viper.SetConfigFile("config.yaml")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
-	viper.WatchConfig()
-	err := viper.ReadInConfig()
+	// prompt user to log in if credentials are not found or relog if credentials expired
+	//if err != nil {
+	//	log.Fatalf("Config error, type `21d login` to continue: %s\n", err)
+	//} else {
+	//	// prompt for credentials and save if non-existent
+	//	if !viper.IsSet("deezer.username") || !viper.IsSet("deezer.password") {
+	//		log.Fatalf("Deezer login credentials were not found, type `21d` login to continue")
+	//	}
+	//}
 
-	// prompt user to configure or reconfigure if credentials are not found
-	if err != nil {
-		log.Fatalf("Config error, type `21d configure` to continue: %s\n", err)
-	} else {
-		// prompt for credentials and save if non-existent
-		if !viper.IsSet("deezer.username") || !viper.IsSet("deezer.password") {
-			log.Fatalf("Deezer login credentials were not found, type `21d` configure to continue")
-		}
-	}
-
-	// retrieve credentials
-	username := viper.GetString("deezer.username")
-	// on top of aes-256 encryption, the password was base64 encoded
-	encodedPassword, err := base64.StdEncoding.DecodeString(viper.GetString("deezer.password"))
-	if err != nil {
-		log.Fatalf("Error decoding password: %+v", err)
-	}
-	password, err := decryptCredentials(encodedPassword, localKey)
-
-	// create private client
-	privateClient, err := NewPrivateClient()
-	if err != nil {
-		log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
-	}
+	//// retrieve credentials
+	//username := viper.GetString("deezer.username")
+	//// on top of aes-256 encryption, the password was base64 encoded
+	//encodedPassword, err := base64.StdEncoding.DecodeString(viper.GetString("deezer.password"))
+	//if err != nil {
+	//	log.Fatalf("Error decoding password: %+v", err)
+	//}
+	//password, err := decryptCredentials(encodedPassword, localKey)
+	//
+	//// create private client
+	//privateClient, err := NewPrivateClient()
+	//if err != nil {
+	//	log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
+	//}
 
 	// login
-	resp, err := privateClient.Login(username, string(password))
-	fmt.Println(resp)
+	//resp, err := privateClient.Login(username, string(password))
+	//fmt.Println(resp)
 
+	// test getting userdata
+	c, _ := NewPrivateClient()
+	v := url.Values{}
+	v.Set("method", "deezer.getUserData")
+	resp, _ := c.GetPrivateResponse(v)
+	fmt.Println(resp)
 	// initiate cli commands
 	Execute()
 
 	//checkFormLogin, err := privateClient.GetCheckFormLogin()
 	//if err != nil {
 	//	log.Fatalf("Error getting checkFormLogin value: %+v\n", err)
-	//}
-	//if checkFormLogin == "" {
-	//	log.Fatal("checkFormLogin value is empty\n")
 	//}
 }
