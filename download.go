@@ -13,6 +13,7 @@ import (
 )
 
 const privateKey = "jo6aey6haid2Teih"
+const secret = "g4el58wc0zvf9na1"
 
 var downloadCmd = &cobra.Command{
 	Use:   "download",
@@ -41,16 +42,38 @@ var downloadTrackCmd = &cobra.Command{
 		}
 		for _, id := range args {
 			track, err := GetTrack(id)
+			DownloadTrack("downloads/test.mp3", track, format)
 			if err != nil {
-				log.Fatalf("getting track failed: %+v", err)
+				log.Fatalf("downloading track failed: %+v", err)
 			}
-			downloadURL, err := GetDownloadURL(id, track.Data.MD5Origin, format, track.Data.MediaVersion)
-			if err != nil {
-				log.Fatalf("getting download url for track %s failed, %+v", id, err)
-			}
-			fmt.Println(downloadURL.String())
 		}
 	},
+}
+
+//func getPath()
+
+// DownloadTrack will download the track.
+func DownloadTrack(path string, track *PrivateTrack, format string) error {
+	fmt.Printf("Downloading %s\n", path)
+	u, err := GetDownloadURL(track.Data.SongID, track.Data.MD5Origin, format, track.Data.MediaVersion)
+	if err != nil {
+		return err
+	}
+	key := GetBlowfishKey(track.Data.SongID)
+	fmt.Println(string(key))
+	fmt.Println(u)
+	return nil
+}
+
+// GetBlowfishKey is a magic function that returns a blowfish key from the song ID.
+func GetBlowfishKey(songID string) []byte {
+	hash := md5.Sum([]byte(songID))
+	checksum := hex.EncodeToString(hash[:])
+	bfkey := make([]byte, 16)
+	for i := 0; i < 16; i++ {
+		bfkey[i] += checksum[i] ^ checksum[i+16] ^ secret[i]
+	}
+	return bfkey
 }
 
 // ECBEncrypt is used by GetDownloadURL to retrieve the download URL for a track using AES encryption
