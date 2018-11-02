@@ -69,7 +69,7 @@ var rootCmd = &cobra.Command{
 	Short: "21d is a tool to search and download tracks from Deezer",
 }
 
-// Execute executes commands
+// Execute executes commands.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -77,8 +77,15 @@ func Execute() {
 	}
 }
 
+// Global variables for flags.
+var downloadQuality string
+
 func init() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(getTrackCmd)
+	rootCmd.AddCommand(downloadCmd)
+	downloadCmd.AddCommand(downloadTrackCmd)
+	downloadCmd.PersistentFlags().StringVarP(&downloadQuality, "quality", "q", "MP3_320",
+		"Select quality of downloads (default MP3_320). Valid values: MP3_128, MP3_256, MP3_320, FLAC")
 }

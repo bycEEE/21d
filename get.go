@@ -17,10 +17,8 @@ var getCmd = &cobra.Command{
 var getTrackCmd = &cobra.Command{
 	Use:   "track",
 	Short: "Get track info",
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			log.Fatalf("no track ids have been specified")
-		}
 		for _, id := range args {
 			t, err := GetTrack(id)
 			if err != nil {
@@ -33,8 +31,8 @@ var getTrackCmd = &cobra.Command{
 }
 
 // GetTrack retrieves a track and its relevant info.
-func GetTrack(songID string) (*PrivateData, error) {
-	// create private client and remove cookies from cookie jar, though none should be loaded
+func GetTrack(songID string) (*PrivateTrack, error) {
+	// create private client
 	privateClient, err := NewPrivateClient()
 	if err != nil {
 		log.Fatalf("Error establishing connection to the private Deezer API: %+v", err)
@@ -47,7 +45,11 @@ func GetTrack(songID string) (*PrivateData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &resp.Results.Data, nil
+	pt := PrivateTrack{Data: resp.Results.Data, Lyrics: resp.Results.Lyrics}
+	if pt.Data.MD5Origin == "" {
+		return nil, fmt.Errorf("failed to retrieve track MD5_ORIGIN, value is empty")
+	}
+	return &pt, nil
 }
 
 // GetResource is a wrapper around PostPrivateResponse that sends a post request to retrieve a resource.

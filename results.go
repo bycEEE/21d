@@ -20,6 +20,12 @@ type PrivateResults struct {
 	//ISRC PrivateISRC `json:"ISRC"`
 }
 
+// PrivateTrack is a custom resource with both PrivateResults.Data and PrivateResults.Lyrics
+type PrivateTrack struct {
+	Data PrivateData `json:"DATA"`
+	Lyrics PrivateLyrics `json:"LYRICS"`
+}
+
 // PrivateUser contains information about the Deezer user retrieved from the private API.
 type PrivateUser struct {
 	ID          int    `json:"USER_ID"`
