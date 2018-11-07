@@ -20,7 +20,6 @@ import (
 
 const privateKey = "jo6aey6haid2Teih"
 const secret = "g4el58wc0zvf9na1"
-const chunkSize = 2048
 
 var downloadCmd = &cobra.Command{
 	Use:   "download",
@@ -97,23 +96,27 @@ func DownloadTrack(path string, track*PrivateTrack, format string) error {
 	count := 0
 	cur := 0
 	filebuf := make([]byte, size) // file buffer
-	partbuf := make([]byte, chunkSize) // part buffer
 	fmt.Printf("Downloading %s, size: %d bytes\n", path, size)
-	for {
-		bytelen, err := io.ReadFull(resp.Body, partbuf)
-		if err != nil { // err when fewer bytes than 2048 are read
-			lastbuf := make([]byte, size-cur)
-			copy(filebuf[cur:size], lastbuf[:])
-			cur = size
-			break
-		}
-		// decrypt every third 2048 byte block
-		if (count % 3 != 0) || bytelen < chunkSize {
-			copy(filebuf[cur:cur+bytelen], partbuf[:bytelen])
+
+	for cur < size {
+		var partsize int
+		if size - cur >= 2048 {
+			partsize = 2048
 		} else {
-			copy(filebuf[cur:], decryptChunk(partbuf, key))
+			partsize = size - cur
 		}
-		cur += bytelen
+		partbuf := make([]byte, partsize)
+		_, err := io.ReadFull(resp.Body, partbuf)
+		if err != nil {
+			return err
+		}
+		if (count % 3 > 0) || partsize < 2048 {
+			copy(filebuf[cur:cur+partsize], partbuf[:])
+		} else {
+			decrypted := decryptChunk(partbuf[:], key)
+			copy(filebuf[cur:cur+partsize], decrypted)
+		}
+		cur += partsize
 		count++
 	}
 	f.Write(filebuf) // write to file
@@ -206,20 +209,21 @@ func DownloadTrack(path string, track*PrivateTrack, format string) error {
 
 // decryptChunk is used to decrypt tracks. Every 3rd 2048 byte block is encrypted. The key is retrieved from
 // GetBlowfishKey.
-func decryptChunk(et, key []byte) []byte {
+func decryptChunk(ct, key []byte) []byte {
 	block, err := blowfish.NewCipher(key)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
-	//make initialisation vector to be the first 8 bytes of ciphertext
-	div := et[:blowfish.BlockSize]
+	// make initialisation vector 8 bytes zero to seven instead of first 8 bytes of ciphertext
+	// this is a static iv
+	iv := []byte{0, 1, 2, 3, 4, 5, 6, 7}
 	// check last slice of encrypted text, if it's not a modulus of cipher block size, we're in trouble
-	decrypted := et[blowfish.BlockSize:]
-	if len(decrypted)%blowfish.BlockSize != 0 {
+	if len(ct[blowfish.BlockSize:])%blowfish.BlockSize != 0 {
 		panic("decrypted chunk is not a multiple of blowfish.BlockSize")
 	}
+	decrypted := ct[:]
 	// ok, we're good... create the decrypter
-	dcbc := cipher.NewCBCDecrypter(block, div)
+	dcbc := cipher.NewCBCDecrypter(block, iv)
 	// decrypt!
 	dcbc.CryptBlocks(decrypted, decrypted)
 	return decrypted
