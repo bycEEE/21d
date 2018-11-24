@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/andreburgaud/crypt2go/ecb"
+	"github.com/bogem/id3v2"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/blowfish"
 	"golang.org/x/text/encoding/charmap"
@@ -15,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -56,7 +58,8 @@ var downloadTrackCmd = &cobra.Command{
 			if (format == "3" && track.Data.FileSizeMP3320 == "0") || (format == "5" && track.Data.FileSizeMP3256 == 0) || (format == "1" && track.Data.FileSizeMP3128 == "0" || (format == "9" && track.Data.FileSizeFLAC == "0")) {
 				log.Fatalf("track not found in the desired bitrate") // add song title and bitrate here
 			}
-			DownloadTrack("test.mp3", track, format)
+			path := filepath.Join(".", "downloads", track.Data.Artists[0].Name, track.Data.AlbumTitle, fmt.Sprintf("%s - %s.mp3", track.Data.TrackNumber, track.Data.SongTitle))
+			DownloadTrack(path, track, format)
 		}
 	},
 }
@@ -64,7 +67,7 @@ var downloadTrackCmd = &cobra.Command{
 //func getPath()
 
 // DownloadTrack will download the track
-func DownloadTrack(path string, track*PrivateTrack, format string) error {
+func DownloadTrack(path string, track *PrivateTrack, format string) error {
 	// get download and file size
 	u, err := GetDownloadURL(track.Data.SongID, track.Data.MD5Origin, format, track.Data.MediaVersion)
 	if err != nil {
@@ -84,8 +87,9 @@ func DownloadTrack(path string, track*PrivateTrack, format string) error {
 	// get decryption key
 	key := GetBlowfishKey(track.Data.SongID)
 
-	// create file
-	f, err := os.Create(path)
+	// create directory and file
+	os.MkdirAll(filepath.Dir(path), 0777)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
@@ -120,6 +124,7 @@ func DownloadTrack(path string, track*PrivateTrack, format string) error {
 		count++
 	}
 	f.Write(filebuf) // write to file
+	WriteTag(path, track)
 	return nil
 }
 //
@@ -222,7 +227,7 @@ func decryptChunk(ct, key []byte) []byte {
 		panic("decrypted chunk is not a multiple of blowfish.BlockSize")
 	}
 	decrypted := ct[:]
-	// ok, we're good... create the decrypter
+	// ok, we're good... create the decrypteaws_cloudwatch_event_target"r
 	dcbc := cipher.NewCBCDecrypter(block, iv)
 	// decrypt!
 	dcbc.CryptBlocks(decrypted, decrypted)
@@ -273,4 +278,33 @@ func GetDownloadURL(songID, md5Origin, format, mediaVersion string) (*url.URL, e
 		return nil, err
 	}
 	return pu, nil
+}
+
+// WriteTag will write the id3v2 metadata tags
+func WriteTag(file string, track *PrivateTrack) error {
+	tag, err := id3v2.Open(file, id3v2.Options{Parse: true})
+	if err != nil {
+		log.Fatal("error opening mp3 file", err)
+	}
+	tag.AddTextFrame(tag.CommonID("Title"), tag.DefaultEncoding(), track.Data.SongTitle)
+	tag.AddTextFrame(tag.CommonID("Lead artist/Lead performer/Soloist/Performing group"), tag.DefaultEncoding(), track.Data.Artists[0].Name)
+	tag.AddTextFrame(tag.CommonID("Album/Movie/Show title"), tag.DefaultEncoding(), track.Data.AlbumTitle)
+	//tag.AddTextFrame(tag.CommonID("Band/Orchestra/Accompaniment"), tag.DefaultEncoding(), track.Data.)
+	tag.AddTextFrame(tag.CommonID("Track number/Position in set"), tag.DefaultEncoding(), track.Data.TrackNumber)
+	tag.AddTextFrame(tag.CommonID("Part of a set"), tag.DefaultEncoding(), track.Data.DiskNumber)
+	tag.AddTextFrame(tag.CommonID("ISRC"), tag.DefaultEncoding(), track.Data.ISRC)
+	//tag.AddTextFrame(tag.CommonID("Length"), tag.DefaultEncoding(), track.Data.)
+	//tag.AddTextFrame(tag.CommonID("Attached picture"), tag.DefaultEncoding(), track.Data.)
+	//tag.AddTextFrame(tag.CommonID("Unsynchronised lyrics/text transcription"), tag.DefaultEncoding(), track.Lyrics.LyricsText)
+	//tag.AddTextFrame(tag.CommonID("Publisher"), tag.DefaultEncoding(), track.Data.)
+	//tag.AddTextFrame(tag.CommonID("Genre"), tag.DefaultEncoding(), track.Data.)
+	tag.AddTextFrame(tag.CommonID("Copyright message"), tag.DefaultEncoding(), track.Data.Copywrite)
+	//tag.AddTextFrame(tag.CommonID("Date"), tag.DefaultEncoding(), track.Data.PhysicalReleaseDate)
+	//tag.AddTextFrame(tag.CommonID("Year"), tag.DefaultEncoding(), track.Data.)
+	//tag.AddTextFrame(tag.CommonID("BPM"), tag.DefaultEncoding(), track.Data.BPM)
+	//tag.AddTextFrame(tag.CommonID("Composer"), tag.DefaultEncoding(), track.Data.)
+	if err = tag.Save(); err != nil {
+		log.Fatal("error while saving tag", err)
+	}
+	return nil
 }

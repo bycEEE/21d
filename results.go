@@ -60,9 +60,28 @@ type PrivateData struct {
 	Version string `json:"VERSION"`
 	ExplicitLyrics string `json:"EXPLICIT_LYRICS"`
 	ISRC string `json:"ISRC"`
-	//SongContributors PrivateSongContributors SNG_CONTRIBUTORS
+	SongContributors PrivateSongContributors `json:"SNG_CONTRIBUTORS"`
 	LyricsID int `json:"LYRICS_ID"`
 	PhysicalReleaseDate string `json:"PHYSICAL_RELEASE_DATE"`
+	Copywrite string `json:"COPYWRITE"`
+	//BPM string `json:"BPM"`
+	Gain string `json:"GAIN"`
+	ReleaseDate string `json:"release_date"`
+}
+
+// PrivateSongContributors contain additional artist information.
+type PrivateSongContributors struct {
+	ComposerLyricist []string `json:"composerlyricist"`
+	FeaturedArtist []string `json:"featuredartist"`
+	MainArtist []string `json:"mainartist"`
+	Mixer []string `json:"mixer"`
+	Producer []string `json:"producer"`
+	StudioPersonnel []string `json:"studiopersonnel"`
+	Composer []string `json:"composer"`
+	MusicPublisher []string `json:"musicpublisher"`
+	Engineer []string `json:"engineer"`
+	Writer []string `json:"writer"`
+	Author []string `json:"author"`
 }
 
 // PrivateLyrics contains the lyrics in text and timestamped form.
