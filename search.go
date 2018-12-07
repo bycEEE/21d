@@ -20,11 +20,13 @@ var searchTrackCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, query := range args {
-			t, err := SearchTrack(query)
+			results, err := SearchTrack(query)
 			if err != nil {
-				log.Fatalf("getting track %s failed: %+v", query, err)
+				log.Fatalf("searching track %s failed: %+v", query, err)
 			} else {
-				fmt.Println(t)
+				for i, track := range results {
+					fmt.Printf("%d | %s (%d) by %s (%d) in %s (%d)\n", i, track.Title, track.ID, track.Artist.Name, track.Artist.ID, track.Album.Title, track.Album.ID)
+				}
 			}
 		}
 	},
@@ -39,8 +41,6 @@ func Search(objtype, query string) (*PublicResults, error) {
 	q := u.Query()
 	q.Set("q", fmt.Sprintf("%s:\"%s\"", objtype, query))
 	u.RawQuery = q.Encode()
-	test := u.String()
-	fmt.Println(test)
 
 	resp, err := c.client.Get(u.String())
 	if err != nil {
@@ -60,10 +60,10 @@ func Search(objtype, query string) (*PublicResults, error) {
 	return &results, nil
 }
 
-func SearchTrack(query string) (*[]PublicTrack, error) {
+func SearchTrack(query string) ([]PublicTrack, error) {
 	tracks, err := Search("track", query)
 	if err != nil {
 		return nil, err
 	}
-	return &tracks.Data, nil
+	return tracks.Data, nil
 }
