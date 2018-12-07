@@ -23,6 +23,14 @@ type PrivateClient struct {
 	jar *jar.Jar
 }
 
+// PublicClient is a client that connects to the public API
+type PublicClient struct {
+	// basePath is the API host, this gets prepended to every request.
+	basePath string
+	// client provides access to the original http.client functions.
+	client *http.Client
+}
+
 type headers map[string][]string
 
 // NewPrivateClient returns a new client which talks to the private Deezer API.
@@ -59,6 +67,18 @@ func NewPrivateClient() (*PrivateClient, error) {
 	}
 
 	c.client = &http.Client{Jar: c.jar}
+	return c, nil
+}
+
+func NewPublicClient() (*PublicClient, error) {
+	c := &PublicClient{}
+
+	u, err := url.Parse(publicAPIURL)
+	if err != nil {
+		return nil, err
+	}
+	c.basePath = u.Host
+	c.client = &http.Client{}
 	return c, nil
 }
 
