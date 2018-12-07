@@ -1,10 +1,5 @@
 package main
 
-import (
-	"net/url"
-	"time"
-)
-
 // PrivateResponse contains the response body to a private API call.
 type PrivateResponse struct {
 	//Error   PrivateError     `json:"error"`
@@ -131,15 +126,15 @@ type PublicTrack struct {
 	TitleVersion string `json:"title_version"`
 	Unseen bool `json:"unseen"`
 	ISRC string `json:"isrc"`
-	Link url.URL `json:"url"`
-	Share url.URL `json:"share"`
+	Link string `json:"url"`
+	Share string `json:"share"`
 	Duration int `json:"duration"`
 	TrackPosition int `json:"track_position"`
 	DiskNumber int `json:"disk_number"`
 	Rank int `json:"int"`
-	ReleaseDate time.Time `json:"release_date"`
+	ReleaseDate string `json:"release_date"`
 	ExplicitLyrics bool `json:"explicit_lyrics"`
-	Preview url.URL `json:"preview"`
+	Preview string `json:"preview"`
 	BPM float32 `json:"bpm"`
 	Gain float32 `json:"gain"`
 	AvailableCountries []string `json:"available_countries"`
@@ -155,16 +150,16 @@ type PublicArtist struct {
 	ID int `json:"id"`
 	Name string `json:"name"`
 	Link string `json:"url"`
-	Share url.URL `json:"share"`
-	Picture url.URL `json:"picture"`
-	PictureSmall url.URL `json:"picture_small"`
-	PictureMedium url.URL `json:"picture_medium"`
-	PictureBig url.URL `json:"picture_big"`
-	PictureXL url.URL `json:"picture_xl"`
+	Share string `json:"share"`
+	Picture string `json:"picture"`
+	PictureSmall string `json:"picture_small"`
+	PictureMedium string `json:"picture_medium"`
+	PictureBig string `json:"picture_big"`
+	PictureXL string `json:"picture_xl"`
 	NbAlbum int `json:"nb_album"`
 	NbFan int `json:"nb_fan"`
 	Radio bool `json:"radio"`
-	TrackList url.URL `json:"tracklist"`
+	TrackList string `json:"tracklist"`
 	Type string `json:"type,omitempty"`
 	Role string `json:"role,omitempty"`
 }
@@ -174,12 +169,12 @@ type PublicAlbum struct {
 	Title string `json:"title"`
 	UPC string `json:"UPC"`
 	Link string `json:"url"`
-	Share url.URL `json:"share"`
-	Cover url.URL `json:"cover"`
-	CoverSmall url.URL `json:"cover_small"`
-	CoverMedium url.URL `json:"cover_medium"`
-	CoverBig url.URL `json:"cover_big"`
-	CoverXL url.URL `json:"cover_xl"`
+	Share string `json:"share"`
+	Cover string `json:"cover"`
+	CoverSmall string `json:"cover_small"`
+	CoverMedium string `json:"cover_medium"`
+	CoverBig string `json:"cover_big"`
+	CoverXL string `json:"cover_xl"`
 	GenreID int `json:"genre_id"`
 	Genres PublicGenre `json:"genres"`
 	Label string `json:"label"`
@@ -187,11 +182,11 @@ type PublicAlbum struct {
 	Duration int `json:"duration"`
 	Fans int `json:"fans"`
 	Rating int `json:"rating"`
-	ReleaseDate time.Time `json:"release_date"`
+	ReleaseDate string `json:"release_date"`
 	RecordType string `json:"record_type"`
 	Available bool `json:"available"`
 	//Alternative PublicAlbum `json:"alternative"`
-	TrackList url.URL `json:"tracklist"`
+	TrackList string `json:"tracklist"`
 	ExplicitLyrics bool `json:"explicit_lyrics"`
 	Contributors []PublicContributor `json:"contributors"`
 	Artist PublicArtist `json:"artist"`
@@ -208,9 +203,9 @@ type PublicContributor struct {
 type PublicGenre struct {
 	ID int `json:"id"`
 	Name string `json:"name"`
-	Picture url.URL `json:"picture"`
-	PictureSmall url.URL `json:"picture_small"`
-	PictureMedium url.URL `json:"picture_medium"`
-	PictureBig url.URL `json:"picture_big"`
-	PictureXL url.URL `json:"picture_xl"`
+	Picture string `json:"picture"`
+	PictureSmall string `json:"picture_small"`
+	PictureMedium string `json:"picture_medium"`
+	PictureBig string `json:"picture_big"`
+	PictureXL string `json:"picture_xl"`
 }
