@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
@@ -26,8 +28,8 @@ var searchTrackCmd = &cobra.Command{
 			if err != nil {
 				log.Fatalf("searching track %s failed: %+v", query, err)
 			} else {
-				data := make([][]string, len(results))
-				for i, track := range results {
+				data := make([][]string, len(results.Data))
+				for i, track := range results.Data {
 					data[i] = []string{strconv.Itoa(track.ID), track.Title, strconv.Itoa(track.Artist.ID), track.Artist.Name, strconv.Itoa(track.Album.ID), track.Album.Title}
 				}
 				table := tablewriter.NewWriter(os.Stdout)
@@ -40,31 +42,39 @@ var searchTrackCmd = &cobra.Command{
 	},
 }
 
-func SearchTrack(query string) (PublicTrackList, error) {
+func SearchResponse(objtype, query string) (*http.Response, error) {
 	c, err := NewPublicClient()
 	if err != nil {
 		return nil, err
 	}
-	u := &url.URL{Scheme: "https", Host: c.basePath, Path: "search/track"}
-	q := u.Query()
-	q.Set("q", query)
-	u.RawQuery = q.Encode()
-
-	resp, err := c.client.Get(u.String())
+	path := "/search/" + objtype
+	v := url.Values{}
+	v.Set("q", query)
+	v.Set("strict", "on")
+	ctx := context.Background()
+	resp, err := c.get(ctx, path, v, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	return resp, nil
+}
+
+func SearchTrack(query string) (*PublicTrackListResults, error) {
+	resp, err := SearchResponse("track", query)
+	if err != nil {
+		return nil, err
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	var results PublicTrackListResults
 	err = json.Unmarshal(body, &results)
 	if err != nil {
 		return nil, err
 	}
-	return results.Data, nil
+	return &results, nil
 }
 
 //func SearchArtist(query string) ([]PublicArtist, error) {

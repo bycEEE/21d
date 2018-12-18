@@ -12,11 +12,6 @@ import (
 	"os"
 )
 
-const (
-	privateAPIURL = "http://www.deezer.com/ajax/gw-light.php"
-	publicAPIURL  = "https://api.deezer.com"
-)
-
 // Login handles logging in.
 func (c *PrivateClient) Login(username, password, checkFormLogin string) (*http.Response, error) {
 	// set parameters
@@ -146,4 +141,3 @@ func (c *PrivateClient) PostPrivateResponse(v url.Values, body io.Reader) (*Priv
 	return &pr, err
 }
 // PostPrivateResponse parses an http response from a POST request retrieved from the private API.
-

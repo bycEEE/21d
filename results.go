@@ -132,7 +132,7 @@ type PublicTrackListResults struct {
 //	Next string `json:"next"`
 //}
 
-type PublicTrackList []PublicTrack
+//type PublicTrackList []PublicTrack
 //type PublicArtistList []PublicArtist
 //type PublicAlbumList []PublicAlbum
 

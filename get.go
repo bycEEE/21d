@@ -66,21 +66,3 @@ func (c *PrivateClient) GetResource(method string, id string, bodyVal map[string
 	}
 	return resp, nil
 }
-
-// GetTrack retrieves the song info from the private API.
-//func (c *PrivateClient) GetTrack(songID string) (*PrivateData, error) {
-//	v := url.Values{}
-//	v.Set("method", "deezer.pageTrack")
-//
-//	bodyVal := map[string]string{
-//		"sng_id": songID,
-//	}
-//	jsonVal, _ := json.Marshal(bodyVal)
-//	resp, err := c.PostPrivateResponse(v, bytes.NewBuffer(jsonVal))
-//	if err != nil {
-//		return nil, fmt.Errorf("error getting track %s, %+v", songID, err)
-//	}
-//	return &resp.Results.Data, nil
-//}
-
-//524156872
