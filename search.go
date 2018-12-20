@@ -20,7 +20,7 @@ var searchCmd = &cobra.Command{
 
 var searchTrackCmd = &cobra.Command{
 	Use:   "track",
-	Short: "Search for track",
+	Short: "Search for a track",
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		for _, query := range args {
@@ -34,6 +34,30 @@ var searchTrackCmd = &cobra.Command{
 				}
 				table := tablewriter.NewWriter(os.Stdout)
 				table.SetHeader([]string{"Track ID", "Track Title", "Artist ID", "Artist Name", "Album ID", "Album Title"})
+				table.SetRowLine(true)
+				table.AppendBulk(data)
+				table.Render()
+			}
+		}
+	},
+}
+
+var searchAlbumCmd = &cobra.Command{
+	Use:   "album",
+	Short: "Search for an album",
+	Args: cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		for _, query := range args {
+			results, err := SearchAlbum(query)
+			if err != nil {
+				log.Fatalf("searching album %s failed: %+v", query, err)
+			} else {
+				data := make([][]string, len(results.Data))
+				for i, album := range results.Data {
+					data[i] = []string{strconv.Itoa(album.ID), album.Title, strconv.Itoa(album.Artist.ID), album.Artist.Name}
+				}
+				table := tablewriter.NewWriter(os.Stdout)
+				table.SetHeader([]string{"Album ID", "Album Title", "Artist ID", "Artist Name"})
 				table.SetRowLine(true)
 				table.AppendBulk(data)
 				table.Render()
@@ -70,6 +94,24 @@ func SearchTrack(query string) (*PublicTrackListResults, error) {
 	}
 	defer resp.Body.Close()
 	var results PublicTrackListResults
+	err = json.Unmarshal(body, &results)
+	if err != nil {
+		return nil, err
+	}
+	return &results, nil
+}
+
+func SearchAlbum(query string) (*PublicAlbumListResults, error) {
+	resp, err := SearchResponse("album", query)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	var results PublicAlbumListResults
 	err = json.Unmarshal(body, &results)
 	if err != nil {
 		return nil, err

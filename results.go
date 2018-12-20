@@ -125,16 +125,12 @@ type PublicTrackListResults struct {
 //	Total int `json:"total"`
 //	Next string `json:"next"`
 //}
-//
-//type PublicAlbumListResults struct {
-//	Data []PublicAlbum `json:"data"`
-//	Total int `json:"total"`
-//	Next string `json:"next"`
-//}
 
-//type PublicTrackList []PublicTrack
-//type PublicArtistList []PublicArtist
-//type PublicAlbumList []PublicAlbum
+type PublicAlbumListResults struct {
+	Data []PublicAlbum `json:"data"`
+	Total int `json:"total"`
+	Next string `json:"next"`
+}
 
 type PublicTrack struct {
 	ID int `json:"id"`

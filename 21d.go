@@ -90,4 +90,5 @@ func init() {
 		"Select quality of downloads (default MP3_320). Valid values: MP3_128, MP3_256, MP3_320, FLAC")
 	rootCmd.AddCommand(searchCmd)
 	searchCmd.AddCommand(searchTrackCmd)
+	searchCmd.AddCommand(searchAlbumCmd)
 }
