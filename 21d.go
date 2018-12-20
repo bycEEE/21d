@@ -84,6 +84,7 @@ func init() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(getCmd)
 	getCmd.AddCommand(getTrackCmd)
+	getCmd.AddCommand(getAlbumCmd)
 	rootCmd.AddCommand(downloadCmd)
 	downloadCmd.AddCommand(downloadTrackCmd)
 	downloadCmd.PersistentFlags().StringVarP(&downloadQuality, "quality", "q", "MP3_320",

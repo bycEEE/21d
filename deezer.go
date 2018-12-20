@@ -140,4 +140,3 @@ func (c *PrivateClient) PostPrivateResponse(v url.Values, body io.Reader) (*Priv
 	}
 	return &pr, err
 }
-// PostPrivateResponse parses an http response from a POST request retrieved from the private API.
